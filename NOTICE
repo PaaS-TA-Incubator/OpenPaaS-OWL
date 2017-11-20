@@ -1,0 +1,22 @@
+OSS Notice | OpenPaaS-OWL
+
+This Software uses Open Source Software(OSS). You can find the source code of these open source projects, along with applicable license information, below. We are deeply grateful to these developers for their work and contributions.
+THE FOLLOWING SETS FORTH ATTRIBUTION NOTICES FOR THIRD PARTY SOFTWARE THAT MAY BE CONTAINED IN PORTIONS OF THIS PRODUCT.
+
+1. OPEN SOURCE
+## 1. Grafana
+  - https://github.com/grafana/grafana
+  - Copyright 2014-2017 Torkel Ödegaard, Raintank Inc.
+  - Apache License 2.0
+
+## 2. Prometheus BOSH Release 
+  - https://github.com/cloudfoundry-community/prometheus-boshrelease
+  - Copyright 2016-Present Ferran Rodenas
+  - Apache License 2.0
+
+## 3 Iconfinder Icon
+  - https://www.iconfinder.com/icons/416387/big_bird_eyes_night_owl_vision_wild_icon#size=128
+  - Copyright 2017 Iconfinder, All rights reserved.
+  - Creative Commons (Attribution 3.0 Unported) (라이선스 링크 : https://creativecommons.org/licenses/by/3.0/)
+
+

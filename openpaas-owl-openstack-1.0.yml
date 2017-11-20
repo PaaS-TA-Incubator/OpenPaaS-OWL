@@ -1,0 +1,252 @@
+compilation:
+  cloud_properties:
+    instance_type: m1.medium
+  network: openpaas-owl-net
+  reuse_compilation_vms: false
+  workers: 3
+
+director_uuid: XXXXXXXXXXXXXXXX #director_UUID 
+
+jobs:
+- instances: 1
+  name: alertmanager
+  networks:
+  - name: openpaas-owl-net
+  persistent_disk: 1024
+  properties:
+    alertmanager:
+      receivers:
+      - name: ops-team
+        email_configs:
+        - to: user@gmail.com # The email address to send notifications to.
+          from: admin@alert.localhost # The sender address.
+          send_resolved: true
+      route:
+        receiver: ops-team # Alertmanager alert receiver name
+        group_wait: 30s # How long to initially wait to send a notification for a group of alerts
+        group_interval: 5m # Sending interval of aleady been sent notifications
+        repeat_interval: 4h # Alert interval of already been sent successfully for an alert
+        group_by:
+          - alertname
+          - service
+          - severity
+      smtp:
+        from: admin@alert.localhost # The sender address.
+        smarthost: localhost:25 # The SMTP host.
+  resource_pool: small_z1
+  templates:
+  - name: alertmanager
+    release: openpaas-owl
+  - name : node_exporter
+    release: node-exporter
+
+- instances: 1
+  name: prometheus
+  networks:
+  - name: openpaas-owl-net
+    static_ips:
+    - x.x.x.x
+  persistent_disk: 10240
+  properties:
+    prometheus:
+      scrape_configs:
+      - job_name: bosh-exporter
+        scrape_interval: 2m
+        scrape_timeout: 1m
+        static_configs:
+        - targets:
+          - localhost:9190
+      - job_name: firehose-exporter
+        scrape_interval: 1m
+        scrape_timeout: 1m
+        static_configs:
+        - targets:
+          - localhost:9186
+      - job_name: cf-exporter
+        scrape_interval: 20s
+        scrape_timeout: 20s
+        static_configs:
+        - targets:
+          - localhost:9193
+      - job_name: node-exporter
+        static_configs:
+        - targets:
+          - x.x.x.x:9100 # grafana job static IP
+          - x.x.x.x:9100 # prometheus job static IP
+          - x.x.x.x:9100 # alertmanager job static IP
+  resource_pool: medium_z1
+  templates:
+  - name: bosh_exporter
+    release: openpaas-owl
+  - name: prometheus
+    release: openpaas-owl
+  - name: firehose_exporter
+    release: openpaas-owl
+  - name : node_exporter
+    release: node-exporter
+  - name : cf_exporter
+    release: openpaas-owl
+  - name : cloudfoundry_alerts
+    release: openpaas-owl
+  - name : bosh_alerts
+    release: openpaas-owl
+  - name : prometheus_alerts
+    release: openpaas-owl
+
+- instances: 1
+  name: grafana
+  networks:
+  - name: openpaas-owl-net
+    static_ips:
+    - x.x.x.x
+  persistent_disk: 1024
+  resource_pool: small_z1
+  templates:
+  - name: grafana
+    release: openpaas-owl
+  - name : node_exporter
+    release: node-exporter
+  - name: bosh_dashboards
+    release: openpaas-owl
+  - name: cloudfoundry_dashboards
+    release: openpaas-owl
+  - name: prometheus_dashboards
+    release: openpaas-owl
+  - name: system_dashboards
+    release: openpaas-owl
+
+name: openpaas-owl-deployment
+
+networks:
+- name: openpaas-owl-net
+  subnets:
+  - cloud_properties:
+      net_id: XXXXXXXXXXXXXXXXXXXXXX # Openstack NET_ID
+      security_groups:
+      - security-group # Openstack security_group info
+    dns:
+    - x.x.x.x # DNS
+    - 8.8.8.8 # DNS
+    gateway: x.x.x.x # Guest Network G/W
+    range: x.x.x.x/24 # Guest Network range
+    reserved:
+    - x.x.x.x - x.x.x.x # Guest Network reserved IP range
+    static:
+    - x.x.x.x - x.x.x.x # Guest Network static IP range
+
+releases:
+- name: openpaas-owl
+  version: latest
+- name: node-exporter
+  version: latest
+
+resource_pools:
+- cloud_properties:
+    availability_zone: nova
+    instance_type: m1.small
+  name: small_z1
+  network: openpaas-owl-net
+  stemcell:
+    name: bosh-openstack-kvm-ubuntu-trusty-go_agent
+    version: latest
+
+- cloud_properties:
+    availability_zone: nova
+    instance_type: m1.medium
+  name: medium_z1
+  network: openpaas-owl-net
+  stemcell:
+    name: bosh-openstack-kvm-ubuntu-trusty-go_agent
+    version: latest
+
+update:
+  canaries: 1
+  canary_watch_time: 1000-30000
+  max_in_flight: 6
+  serial: false
+  update_watch_time: 1000-30000
+
+properties:
+  bosh_exporter:
+    bosh:
+      url: https://BOSH_IP:25555    # BOSH Target info
+      username: BOSH_accout   # BOSH Username
+      password: BOSH_password # BOSH password
+      ca_cert: |
+        -----BEGIN CERTIFICATE-----
+        certs/rootCA.pem
+        -----END CERTIFICATE-----
+    metrics:
+      environment: ((system_domain))   # paasta controller system domain
+  grafana:
+    server:
+      domain: ((system_domain))
+      root_url: http://paasta-grafana-proxy.((system_domain))
+    alerting:
+      execute_alerts: true
+    app_mode: production
+    smtp:
+      enabled: true
+      from_address: monitoring-alert@grafana.((system_domain)) # The sender address.
+      host: smtp_IP # The SMTP host.
+    users:
+      allow_org_create: false
+      auto_assign_org: false
+      auto_assign_org_role: false
+    dashboards: 
+      json:
+        enabled: true
+    security:
+      admin_user: admin # grafana admin user info
+      admin_password: admin # grafana admin user info
+    auth:
+      disable_login_form: false
+      generic_oauth:
+        enabled: true
+        allow_sign_up: false
+        api_url: http://login.((system_domain))/userinfo
+        auth_url: http://login.((system_domain))/oauth/authorize
+        client_id: grafana # grafana uaa client info
+        client_secret: grafana-secret # grafana uaa client info
+        enabled: true
+        scopes: openid
+        token_url: http://login.((system_domain))/oauth/token 
+    prometheus:
+      dashboard_files: 
+        - /var/vcap/jobs/bosh_dashboards/*
+        - /var/vcap/jobs/cloudfoundry_dashboards/*
+        - /var/vcap/jobs/prometheus_dashboards/*
+        - /var/vcap/jobs/system_dashboards/*
+  firehose_exporter:
+    doppler:
+      url: wss://doppler.((system_domain)):4443 # doppler endpoint info
+    uaa:
+      client_id: firehose-exporter # firehose exporter uaa client info
+      client_secret: firehose-exporter-secret # firehose exporter uaa client info
+      url: https://uaa.((system_domain)) # uaa api info
+    skip_ssl_verify: true
+    metrics:
+      environment: ((system_domain))
+    filter:
+      deployments: paasta-container
+      events: ContainerMetric,CounterEvent,HttpStartStop,ValueMetric # firehose metric filter
+  cf_exporter:
+    cf:
+      api_url: https://api.((system_domain)) # cf api info
+      client_id: cf-exporter  # cf exporter uaa client info
+      client_secret: cf-exporter # cf exporter uaa client info
+      deployment_name: paasta-container 
+    log_level: debug
+    metrics:
+      environment: ((system_domain))
+    skip_ssl_verify: true
+  prometheus:
+    storage:
+      local:
+        retention: 720h # metric 보관 기간
+    rule_files: 
+      - /var/vcap/jobs/cloudfoundry_alerts/*
+      - /var/vcap/jobs/bosh_alerts/*
+      - /var/vcap/jobs/prometheus_alerts/*
+    web:
+      external_url: http://x.x.x.x:9090 # prometheus static IP
