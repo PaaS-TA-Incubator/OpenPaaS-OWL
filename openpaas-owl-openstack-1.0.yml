@@ -51,20 +51,20 @@ jobs:
     prometheus:
       scrape_configs:
       - job_name: bosh-exporter
-        scrape_interval: 2m
-        scrape_timeout: 1m
+        scrape_interval: 2m   # bosh metric scrape interval
+        scrape_timeout: 1m    # bosh metric scrape timeout
         static_configs:
         - targets:
           - localhost:9190
       - job_name: firehose-exporter
-        scrape_interval: 1m
-        scrape_timeout: 1m
+        scrape_interval: 1m   # firehose metric scrape interval
+        scrape_timeout: 1m    # firehose metric scrape timeout
         static_configs:
         - targets:
           - localhost:9186
       - job_name: cf-exporter
-        scrape_interval: 20s
-        scrape_timeout: 20s
+        scrape_interval: 20s  # cf metric scrape interval
+        scrape_timeout: 20s   # cf metric scrape timeout
         static_configs:
         - targets:
           - localhost:9193
@@ -181,7 +181,7 @@ properties:
   grafana:
     server:
       domain: ((system_domain))
-      root_url: http://paasta-grafana-proxy.((system_domain))
+      root_url: http://grafana_static_IP # grafana static IP
     alerting:
       execute_alerts: true
     app_mode: production
@@ -208,15 +208,14 @@ properties:
         auth_url: http://login.((system_domain))/oauth/authorize
         client_id: grafana # grafana uaa client info
         client_secret: grafana-secret # grafana uaa client info
-        enabled: true
         scopes: openid
         token_url: http://login.((system_domain))/oauth/token 
     prometheus:
       dashboard_files: 
-        - /var/vcap/jobs/bosh_dashboards/*
-        - /var/vcap/jobs/cloudfoundry_dashboards/*
-        - /var/vcap/jobs/prometheus_dashboards/*
-        - /var/vcap/jobs/system_dashboards/*
+        - /var/vcap/jobs/bosh_dashboards/*.json
+        - /var/vcap/jobs/cloudfoundry_dashboards/*.json
+        - /var/vcap/jobs/prometheus_dashboards/*.json
+        - /var/vcap/jobs/system_dashboards/*.json
   firehose_exporter:
     doppler:
       url: wss://doppler.((system_domain)):4443 # doppler endpoint info
@@ -245,8 +244,8 @@ properties:
       local:
         retention: 720h # metric 보관 기간
     rule_files: 
-      - /var/vcap/jobs/cloudfoundry_alerts/*
-      - /var/vcap/jobs/bosh_alerts/*
-      - /var/vcap/jobs/prometheus_alerts/*
+      - /var/vcap/jobs/cloudfoundry_alerts/*.alerts
+      - /var/vcap/jobs/bosh_alerts/*.alerts
+      - /var/vcap/jobs/prometheus_alerts/*.alerts
     web:
       external_url: http://x.x.x.x:9090 # prometheus static IP

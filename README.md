@@ -135,6 +135,26 @@ OpenPaaS OWL은 PaaS-TA PaaS Platform의 운영자/사용자를 위한 Metric �
       * 기존 OpenPaaS Controller/Container 배포 시 사용하였던 Stemcell 사용하는 경우 별도의 Stemcell Upload 작업이 필요하지 않습니다. 
       * 배포에 필요한 별도의 Stemcell Upload가 필요한 경우 아래 docs를 참고하여 업로드합니다.
         https://bosh.io/docs/sysadmin-commands.html#dir-stemcells
+    * BOSH Release upload
+      * OpenPaaS OWL 배포를 위한 BOSH release를 업로드 합니다.
+      ```
+      $ bosh upload release openpaas-owl-1.0.0.tgz
+      $ bosh upload release exporters/node-exporter-1.1.0.tgz
+      $ bosh releases
+        RSA 1024 bit CA certificates are loaded due to old openssl compatibility
+        Acting as user 'admin' on 'mybosh'
+
+        +-------------------+----------+-------------+
+        | Name              | Versions | Commit Hash |
+        +-------------------+----------+-------------+
+        | node-exporter     | 1.1.0    | d2706592+   |
+        | openpaas-owl      | 1.0.0    | 0641ca50+   |
+        +-------------------+----------+-------------+
+        (*) Currently deployed
+        (+) Uncommitted changes
+
+        Releases total: 2
+      ```    
     * OpenPaaS OWL 배포 정의서 수정
       * OpenPaaS OWL 1.0 에서는 OpenStack IaaS 환경 기준의 배포정의서가 준비되어있습니다.
         (별도 AWS, VMware, GCP, Softlayer등 IaaS 환경의 배포 정의서는 배포정의서의 일부 수정이 필요합니다.) 
